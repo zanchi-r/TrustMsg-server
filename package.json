@@ -2,9 +2,11 @@
   "name": "TrustMsg-server",
   "version": "0.0.1",
   "description": "TrustMsg server",
+  "private": true,
   "dependencies": {
-    "socket.io": "~1.3.5",
+    "express": "^4.12.3",
+    "keypair": "~1.0.0",
     "mongoose": "~3.8.24",
-    "keypair": "~1.0.0"
+    "socket.io": "~1.3.5"
   }
 }
