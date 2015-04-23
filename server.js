@@ -245,6 +245,24 @@ function sendMessage(usernameFrom, usernameTo, message, socket) {
   }
 }
 
+function getMessages(username, socket) {
+  User.findOne({'username': username}).exec(function(err, user) {
+    if (user) {
+      user.messages.forEach(function (message) {
+        socket.emit('message_received', message);
+      });
+      user.messages = [];
+      user.save();
+    }
+    else {
+      socket.emit('get_messages_response', {
+        'result': 'ko',
+        'error': 'cannot find user'
+      });
+    }
+  });
+}
+
 io.on('connection', function(socket){
   var username;
 
@@ -267,11 +285,8 @@ io.on('connection', function(socket){
     socket.on('send_message', function(data) {
       sendMessage(username, data.username, data.message, socket);
     });
-    socket.on('get_message', function(data) {
-
-    });
-    socket.on('get_all_messages', function(data) {
-
+    socket.on('get_messages', function(data) {
+      getMessages(username, socket);
     });
     socket.on('create_group', function(data) {
 
