@@ -1,12 +1,15 @@
+var fs = require('fs');
 var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var https = require('https');
+var server = https.createServer({key: fs.readFileSync('./config/ssl.key'), cert: fs.readFileSync('./config/ssl.cert'), passphrase: 'trustmsg'}, app);
+var io = require('socket.io').listen(server);
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/trustmsg');
 var mongooseIdToken = require('mongoose-id-token');
 var db = mongoose.connection;
 var crypto = require('crypto');
 var async = require("async");
+
 
 var loggedUsers = {};
 
@@ -515,7 +518,7 @@ io.on('connection', function(socket){
   });
 });
 
-http.listen(8000, function(){
+server.listen(8000, function(){
   console.log('listening on *:8000');
 });
 
