@@ -116,7 +116,8 @@ function loginUser(username, password, socket) {
             loggedUsers[username] = socket;
             // Send a login confirmation
             socket.emit('login_response', {
-              'result': 'ok'
+              'result': 'ok',
+              'username': username
             });
           }
         }
