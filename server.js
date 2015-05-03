@@ -293,7 +293,7 @@ function sendMessage(usernameFrom, usernameTo, groupTo, message, socket) {
             User.findOne({'username': username}).exec(function(err, user) {
               if (user && username != usernameFrom) {
                 // If the user exists and is not the sender, send the message
-                user.sendMessage(usernameFrom, groupTo, username, message, now, false, socket);
+                user.sendMessage(usernameFrom, groupTo, group.name, username, message, now, false, socket);
               }
             });
           });
@@ -325,7 +325,7 @@ function sendMessage(usernameFrom, usernameTo, groupTo, message, socket) {
       User.findOne({'username': usernameTo}).exec(function(err, user) {
         if (user) {
           // If the user exists, send the message
-          user.sendMessage(usernameFrom, undefined, usernameTo, message, now, true, socket);
+          user.sendMessage(usernameFrom, undefined, undefined, usernameTo, message, now, true, socket);
         }
         else {
           // Send an error if the user does not exists
@@ -772,12 +772,13 @@ UserSchema.methods.addMessage = function(usernameFrom, groupID, usernameTo, date
 **   - sendResponse: If true, send a confirmation to the sender
 **   - socket: The socket associated to the logged user
 */
-UserSchema.methods.sendMessage = function(usernameFrom, groupID, usernameTo, message, date, sendResponse, socket) {
+UserSchema.methods.sendMessage = function(usernameFrom, groupID, groupName, usernameTo, message, date, sendResponse, socket) {
   if (loggedUsers[usernameTo]) {
     // If the receiver is logged in, send the message directly
     socket.emit('message_received', {
       'usernameFrom': usernameFrom,
       'groupID': groupID,
+      'groupName': groupName,
       'usernameTo': usernameTo,
       'date': date,
       'message': message
@@ -789,6 +790,7 @@ UserSchema.methods.sendMessage = function(usernameFrom, groupID, usernameTo, mes
         'status': 'online',
         'usernameFrom': usernameFrom,
         'groupID': groupID,
+        'groupName': groupName,
         'usernameTo': usernameTo,
         'date': date,
         'message': message
@@ -806,6 +808,7 @@ UserSchema.methods.sendMessage = function(usernameFrom, groupID, usernameTo, mes
             'result': 'ko',
             'usernameFrom': usernameFrom,
             'groupID': groupID,
+            'groupName': groupName,
             'username': usernameTo,
             'message': message,
             'date': date,
@@ -819,6 +822,7 @@ UserSchema.methods.sendMessage = function(usernameFrom, groupID, usernameTo, mes
             'status': 'offline',
             'usernameFrom': usernameFrom,
             'groupID': groupID,
+            'groupName': groupName,
             'usernameTo': usernameTo,
             'date': date,
             'message': message
