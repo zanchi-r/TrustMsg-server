@@ -547,12 +547,13 @@ function addUserToGroup(groupID, groupName, usernameToAdd, username, socket) {
 ** Remove a user from a group
 ** Params:
 **   - groupID: The group ID
+**   - groupName: The group name
 **   - usernameToAdd: The username to add
 **   - username: The username of the logged user
 **   - socket: The socket associated to the logged user
 */
-function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
-  if (groupID && usernameToRemove) {
+function removeUserFromGroup(groupID, groupName, usernameToRemove, username, socket) {
+  if (groupID && groupName && usernameToRemove) {
     // Try to find the user in DB
     Group.findOne({'_id': groupID}).exec(function(err, group) {
       if (group && !group.userInGroup(username)) {
@@ -560,7 +561,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
         socket.emit('remove_user_from_group_response', {
           'result': 'ko',
           'groupID': groupID,
-          'groupName': group.name,
+          'groupName': groupName,
           'username': usernameToRemove,
           'error': "permission denied"
         });
@@ -575,7 +576,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
             socket.emit('remove_user_from_group_response', {
               'result': 'ko',
               'groupID': group._id,
-              'groupName': group.name,
+              'groupName': groupName,
               'username': usernameToRemove,
               'error': 'cannot save to db'
             });
@@ -585,7 +586,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
             socket.emit('remove_user_from_group_response', {
               'result': 'ok',
               'groupID': group._id,
-              'groupName': group.name,
+              'groupName': groupName,
               'username': usernameToRemove,
               'users': group.users
             });
@@ -597,7 +598,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
         socket.emit('remove_user_from_group_response', {
           'result': 'ko',
           'groupID': groupID,
-          'groupName': group.name,
+          'groupName': groupName,
           'username': usernameToRemove,
           'error': "user not in group"
         });
@@ -607,6 +608,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
         socket.emit('remove_user_from_group_response', {
           'result': 'ko',
           'groupID': groupID,
+          'groupName': groupName,
           'username': usernameToRemove,
           'error': "cannot find group"
         });
@@ -750,7 +752,7 @@ io.on('connection', function(socket){
         addUserToGroup(data.groupID, data.groupName, data.username, username, socket);
       });
       socket.on('remove_user_from_group', function(data) {
-        removeUserFromGroup(data.groupID, data.username, username, socket);
+        removeUserFromGroup(data.groupID, data.groupName, data.username, username, socket);
       });
       socket.on('get_group_list', function(data) {
         getGroupList(username, socket);
