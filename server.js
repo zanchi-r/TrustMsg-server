@@ -553,6 +553,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
         socket.emit('remove_user_from_group_response', {
           'result': 'ko',
           'groupID': groupID,
+          'groupName': group.name,
           'username': usernameToRemove,
           'error': "permission denied"
         });
@@ -567,6 +568,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
             socket.emit('remove_user_from_group_response', {
               'result': 'ko',
               'groupID': group._id,
+              'groupName': group.name,
               'username': usernameToRemove,
               'error': 'cannot save to db'
             });
@@ -576,6 +578,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
             socket.emit('remove_user_from_group_response', {
               'result': 'ok',
               'groupID': group._id,
+              'groupName': group.name,
               'username': usernameToRemove,
               'users': group.users
             });
@@ -587,6 +590,7 @@ function removeUserFromGroup(groupID, usernameToRemove, username, socket) {
         socket.emit('remove_user_from_group_response', {
           'result': 'ko',
           'groupID': groupID,
+          'groupName': group.name,
           'username': usernameToRemove,
           'error': "user not in group"
         });
@@ -647,6 +651,56 @@ function getGroupList(username, socket) {
 }
 
 /*
+** Get a list of all the usernames from a group
+** Params:
+**   - groupID: The group ID
+**   - groupName: The group name
+**   - username: The username of the logged user
+**   - socket: The socket associated to the logged user
+*/
+function getUsersInGroup(groupID, groupName, username, socket) {
+  if (groupID && groupName) {
+    // Try to find the group in DB
+  Group.findOne({'_id': groupID}).exec(function(err, group) {
+    if (group && !group.userInGroup(username)) {
+      // Send an error if the user does not belong to the group
+      socket.emit('get_users_in_group_response', {
+        'result': 'ko',
+        'groupID': groupID,
+        'groupName': groupName,
+        'error': "permission denied"
+      });
+    }
+    else if (group && group.userInGroup(username)) {
+      // Send the response on success
+      socket.emit('get_users_in_group_response', {
+        'result': 'ok',
+        'groupID': groupID,
+        'groupName': groupName,
+        'usernames': group.users
+      });
+    }
+    else {
+      // Send an error if the group does not exists
+      socket.emit('get_users_in_group_response', {
+        'result': 'ko',
+        'groupID': groupID,
+        'groupName': groupName,
+        'error': "cannot find group"
+      });
+    }
+  })
+  }
+  else {
+    // Send an error on invalid request
+    socket.emit('get_users_in_group_response', {
+      'result': 'ko',
+      'error': 'invalid data'
+    });
+  }
+}
+
+/*
 ** Link socket events to functions
 */
 io.on('connection', function(socket){
@@ -690,6 +744,9 @@ io.on('connection', function(socket){
     });
     socket.on('get_group_list', function(data) {
       getGroupList(username, socket);
+    });
+    socket.on('get_users_in_group', function(data) {
+      getUsersInGroup(data.groupID, data.groupName, username, socket);
     });
   });
   // Link the disconnect event to the corresponding function
