@@ -705,6 +705,7 @@ function getUsersInGroup(groupID, groupName, username, socket) {
 */
 io.on('connection', function(socket){
   var username;
+  var firstLogin = true;
 
   // Link the create_account event to the corresponding function
   // This event is available for everyone
@@ -717,37 +718,40 @@ io.on('connection', function(socket){
     loginUser(data.username, data.password, socket);
     // Save the username of the logged user
     username = data.username;
-    // All the following events are available only for logged users
-    socket.on('save_public_key', function(data) {
-      savePublicKey(username, data.key, socket);
-    });
-    socket.on('get_public_key', function(data) {
-      getPublicKey(data.username, socket);
-    });
-    socket.on('get_status', function(data) {
-      getStatus(data.username, socket);
-    });
-    socket.on('send_message', function(data) {
-      sendMessage(username, data.username, data.groupID, data.message, socket);
-    });
-    socket.on('get_messages', function(data) {
-      getMessages(username, socket);
-    });
-    socket.on('create_group', function(data) {
-      createGroup(data.name, data.usernames, socket);
-    });
-    socket.on('add_user_to_group', function(data) {
-      addUserToGroup(data.groupID, data.username, username, socket);
-    });
-    socket.on('remove_user_from_group', function(data) {
-      removeUserFromGroup(data.groupID, data.username, username, socket);
-    });
-    socket.on('get_group_list', function(data) {
-      getGroupList(username, socket);
-    });
-    socket.on('get_users_in_group', function(data) {
-      getUsersInGroup(data.groupID, data.groupName, username, socket);
-    });
+    // All the following events are binded only for logged users on their first login attempt
+    if (firstLogin == true) {
+      firstLogin = false;
+      socket.on('save_public_key', function(data) {
+        savePublicKey(username, data.key, socket);
+      });
+      socket.on('get_public_key', function(data) {
+        getPublicKey(data.username, socket);
+      });
+      socket.on('get_status', function(data) {
+        getStatus(data.username, socket);
+      });
+      socket.on('send_message', function(data) {
+        sendMessage(username, data.username, data.groupID, data.message, socket);
+      });
+      socket.on('get_messages', function(data) {
+        getMessages(username, socket);
+      });
+      socket.on('create_group', function(data) {
+        createGroup(data.name, data.usernames, socket);
+      });
+      socket.on('add_user_to_group', function(data) {
+        addUserToGroup(data.groupID, data.username, username, socket);
+      });
+      socket.on('remove_user_from_group', function(data) {
+        removeUserFromGroup(data.groupID, data.username, username, socket);
+      });
+      socket.on('get_group_list', function(data) {
+        getGroupList(username, socket);
+      });
+      socket.on('get_users_in_group', function(data) {
+        getUsersInGroup(data.groupID, data.groupName, username, socket);
+      });
+    }
   });
   // Link the disconnect event to the corresponding function
   // This event is available for everyone
