@@ -822,11 +822,13 @@ UserSchema.methods.isLogged = function() {
 **   - date: The date
 **   - message: The encrypted message
 */
-UserSchema.methods.addMessage = function(usernameFrom, groupID, usernameTo, date, message) {
+UserSchema.methods.addMessage = function(usernameFrom, groupID, groupName, usernameTo, date, message) {
   // Save the message in DB
-  this.messages.push({'usernameFrom':usernameFrom,
+  this.messages.push({
+  'usernameFrom':usernameFrom,
   'usernameTo':usernameTo,
   'groupID': groupID,
+  'groupName': groupName,
   'date': date,
   'message': message});
 }
@@ -836,6 +838,7 @@ UserSchema.methods.addMessage = function(usernameFrom, groupID, usernameTo, date
 ** Params:
 **   - usernameFrom: The sender's username
 **   - groupID: ID of the group. Set to undefined if it's not a group message
+**   - groupName: Name of the group. Set to undefined if it's not a group message
 **   - usernameTo: The receiver's username
 **   - message: The encrypted message
 **   - date: The date
@@ -845,7 +848,7 @@ UserSchema.methods.addMessage = function(usernameFrom, groupID, usernameTo, date
 UserSchema.methods.sendMessage = function(usernameFrom, groupID, groupName, usernameTo, message, date, sendResponse, socket) {
   if (loggedUsers[usernameTo]) {
     // If the receiver is logged in, send the message directly
-    socket.emit('message_received', {
+    loggedUsers[usernameTo].emit('message_received', {
       'usernameFrom': usernameFrom,
       'groupID': groupID,
       'groupName': groupName,
@@ -869,7 +872,7 @@ UserSchema.methods.sendMessage = function(usernameFrom, groupID, groupName, user
   }
   else {
     // If the receiver is not logged in, save the message in DB
-    this.addMessage(usernameFrom, groupID, usernameTo, date, message);
+    this.addMessage(usernameFrom, groupID, groupName, usernameTo, date, message);
     this.save(function(err, user) {
       if (sendResponse) {
         if (err) {
