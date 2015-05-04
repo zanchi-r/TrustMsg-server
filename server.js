@@ -451,12 +451,13 @@ function createGroup(name, usernames, socket) {
 ** Add a user to a group
 ** Params:
 **   - groupID: The group ID
+**   - groupName: The group name
 **   - usernameToAdd: The username to add
 **   - username: The username of the logged user
 **   - socket: The socket associated to the logged user
 */
-function addUserToGroup(groupID, usernameToAdd, username, socket) {
-  if (groupID && usernameToAdd) {
+function addUserToGroup(groupID, groupName, usernameToAdd, username, socket) {
+  if (groupID && groupName && usernameToAdd) {
     // Try to find the user in DB
     User.findOne({'username': usernameToAdd}).exec(function(err, user) {
       if (user) {
@@ -467,6 +468,7 @@ function addUserToGroup(groupID, usernameToAdd, username, socket) {
             socket.emit('add_user_to_group_response', {
               'result': 'ko',
               'groupID': groupID,
+              'groupName': groupName,
               'username': usernameToAdd,
               'error': "permission denied"
             });
@@ -476,6 +478,7 @@ function addUserToGroup(groupID, usernameToAdd, username, socket) {
             socket.emit('add_user_to_group_response', {
               'result': 'ko',
               'groupID': groupID,
+              'groupName': groupName,
               'username': usernameToAdd,
               'error': "user already in group"
             });
@@ -490,6 +493,7 @@ function addUserToGroup(groupID, usernameToAdd, username, socket) {
                 socket.emit('add_user_to_group_response', {
                   'result': 'ko',
                   'groupID': groupID,
+                  'groupName': groupName,
                   'username': usernameToAdd,
                   'error': "cannot save to db"
                 });
@@ -499,6 +503,7 @@ function addUserToGroup(groupID, usernameToAdd, username, socket) {
                 socket.emit('add_user_to_group_response', {
                   'result': 'ok',
                   'groupID': groupID,
+                  'groupName': groupName,
                   'username': usernameToAdd,
                   'users': group.users
                 });
@@ -510,6 +515,7 @@ function addUserToGroup(groupID, usernameToAdd, username, socket) {
             socket.emit('add_user_to_group_response', {
               'result': 'ko',
               'groupID': groupID,
+              'groupName': groupName,
               'username': usernameToAdd,
               'error': "cannot find group"
             });
@@ -521,6 +527,7 @@ function addUserToGroup(groupID, usernameToAdd, username, socket) {
         socket.emit('add_user_to_group_response', {
           'result': 'ko',
           'groupID': groupID,
+          'groupName': groupName,
           'username': usernameToAdd,
           'error': "cannot find user"
         });
@@ -740,7 +747,7 @@ io.on('connection', function(socket){
         createGroup(data.name, data.usernames, socket);
       });
       socket.on('add_user_to_group', function(data) {
-        addUserToGroup(data.groupID, data.username, username, socket);
+        addUserToGroup(data.groupID, data.groupName, data.username, username, socket);
       });
       socket.on('remove_user_from_group', function(data) {
         removeUserFromGroup(data.groupID, data.username, username, socket);
