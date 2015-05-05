@@ -272,6 +272,71 @@ function getStatus(username, socket) {
   }
 }
 
+function keyExchange(usernameFrom, usernameTo, groupID, groupName, senderPublicKey, key, socket) {
+  if (usernameFrom && (usernameTo || groupID) && key) {
+    if (groupID) {
+      Group.findOne({'_id': groupID}).exec(function(err, group) {
+        // TODO
+      });
+    }
+    else {
+      // Try to find the user
+      User.findOne({'username': usernameTo}).exec(function(err, user) {
+        if (user) {
+          // If the user exists, send the key
+          user.sendKeyExchange(usernameFrom, usernameTo, groupID, groupName, senderPublicKey, key, false, socket);
+        }
+        else {
+          // Send an error if the user does not exists
+          socket.emit('key_exchange_response', {
+            'result': 'ko',
+            'usernameFrom': usernameFrom,
+            'username': usernameTo,
+            'senderPublicKey': senderPublicKey,
+            'key': key,
+            'error': 'cannot find user'
+          });
+        }
+      });
+    }
+  }
+  else {
+    // Send an error on invalid request
+    socket.emit('key_exchange_response', {
+      'result': 'ko',
+      'error': 'invalid data'
+    });
+  }
+}
+
+/*
+** Get key exchanges
+** Params:
+**   - username: The username of the logged user
+**   - socket: The socket associated to the logged user
+*/
+function getKeyExchanges(username, socket) {
+  // Try to find the user in DB
+  User.findOne({'username': username}).exec(function(err, user) {
+    if (user) {
+      // If the user exists, send all the key exchanges
+      user.key_exchanges.forEach(function(keyExchange) {
+        socket.emit('key_exchange_received', keyExchange);
+      });
+      // Delete all exchanges and save
+      user.key_exchanges = [];
+      user.save();
+    }
+    else {
+      // Send an error if the user does not exists
+      socket.emit('get_response', {
+        'result': 'ko',
+        'error': 'cannot find user'
+      });
+    }
+  });
+}
+
 /*
 ** Send a message to a user or a group
 ** Params:
@@ -739,6 +804,12 @@ io.on('connection', function(socket){
       socket.on('get_status', function(data) {
         getStatus(data.username, socket);
       });
+      socket.on('key_exchange', function(data) {
+        keyExchange(username, data.username, data.groupID, data.groupName, data.senderPublicKey, data.key, socket);
+      });
+      socket.on('get_key_exchanges', function(data) {
+        getKeyExchanges(username, socket);
+      });
       socket.on('send_message', function(data) {
         sendMessage(username, data.username, data.groupID, data.message, socket);
       });
@@ -793,7 +864,8 @@ var UserSchema = mongoose.Schema({
   username: String,
   password: String,
   public_key: String,
-  messages: Array
+  messages: Array,
+  key_exchanges: Array
 });
 
 /*
@@ -814,6 +886,18 @@ UserSchema.methods.isLogged = function() {
   return (this.username in loggedUsers);
 }
 
+UserSchema.methods.addKeyExchange = function(usernameFrom, usernameTo, groupID, groupName, senderPublicKey, key) {
+  // Save the key exchange in DB
+  this.key_exchanges.push({
+    'usernameFrom': usernameFrom,
+    'usernameTo': usernameTo,
+    'groupID': groupID,
+    'groupName': groupName,
+    'senderPublicKey': senderPublicKey,
+    'key': key
+  });
+}
+
 /*
 ** Save a message sent to the user
 ** Params:
@@ -831,6 +915,58 @@ UserSchema.methods.addMessage = function(usernameFrom, groupID, groupName, usern
   'groupName': groupName,
   'date': date,
   'message': message});
+}
+
+UserSchema.methods.sendKeyExchange = function(usernameFrom, usernameTo, groupID, groupName, senderPublicKey, key, sendResponse, socket) {
+  if (loggedUsers[usernameTo]) {
+    loggedUsers[usernameTo].emit('key_exchange_received', {
+      'usernameFrom': usernameFrom,
+      'usernameTo': usernameTo,
+      'groupID': groupID,
+      'groupName': groupName,
+      'senderPublicKey': senderPublicKey,
+      'key': key
+    });
+    if (sendResponse) {
+      socket.emit('key_exchange_response', {
+        'result': 'ok',
+        'status': 'online',
+        'usernameFrom': usernameFrom,
+        'usernameTo': usernameTo,
+        'groupID': groupID,
+        'groupName': groupName,
+        'senderPublicKey': senderPublicKey,
+        'key': key
+      });
+    }
+  }
+  else {
+    this.addKeyExchange(usernameFrom, usernameTo, groupID, groupName, senderPublicKey, key);
+    this.save(function(err, user) {
+      if (err) {
+        socket.emit('key_exchange_response', {
+          'result': 'ko',
+          'usernameFrom': usernameFrom,
+          'usernameTo': usernameTo,
+          'groupID': groupID,
+          'groupName': groupName,
+          'key': key,
+          'error': 'cannot save to db'
+        });
+      }
+      else {
+        socket.emit('key_exchange_response', {
+          'result': 'ok',
+          'status': 'offline',
+          'usernameFrom': usernameFrom,
+          'usernameTo': usernameTo,
+          'groupID': groupID,
+          'groupName': groupName,
+          'key': key
+        });
+      }
+    });
+  }
 }
 
 /*
