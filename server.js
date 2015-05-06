@@ -841,10 +841,10 @@ io.on('connection', function(socket){
 });
 
 /*
-** Run the server and listen to the port 8000
+** Run the server and listen to the port 4242
 */
-server.listen(8000, function(){
-  console.log('listening on *:8000');
+server.listen(4242, function(){
+  console.log('listening on *:4242');
 });
 
 /*
