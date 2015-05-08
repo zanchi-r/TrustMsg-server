@@ -1,13 +1,17 @@
+var sslkey = './config/ssl.key';
+var sslcert = './config/ssl.cert';
+var passphrase = 'trustmsg';
+var mongoUrl = 'mongodb://localhost/trustmsg';
 /*
 ** Load some modules
 */
 var fs = require('fs');
 var app = require('express')();
 var https = require('https');
-var server = https.createServer({key: fs.readFileSync('./config/ssl.key'), cert: fs.readFileSync('./config/ssl.cert'), passphrase: 'trustmsg'}, app);
+var server = https.createServer({key: fs.readFileSync(sslkey), cert: fs.readFileSync(sslcert), passphrase: passphrase}, app);
 var io = require('socket.io').listen(server);
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/trustmsg');
+mongoose.connect(mongoUrl);
 var mongooseIdToken = require('mongoose-id-token');
 var db = mongoose.connection;
 var crypto = require('crypto');
